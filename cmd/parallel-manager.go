@@ -30,8 +30,8 @@ import (
 )
 
 const (
-	// Maximum number of parallel workers
-	maxParallelWorkers = 128
+	// Default maximum number of parallel workers
+	maxDefaultParallelWorkers = 128
 
 	// Monitor tick to decide to add new workers
 	monitorPeriod = 4 * time.Second
@@ -80,6 +80,11 @@ type ParallelManager struct {
 
 // addWorker creates a new worker to process tasks
 func (p *ParallelManager) addWorker() {
+	var maxParallelWorkers := maxDefaultParallelWorkers
+	concurrency, customConcurrency := os.LookupEnv("MINIO_CLIENT_CONCURRENCY")
+	if customConcurrency {
+		maxParallelWorkers = strconv.ParseUint(customConcurrency)
+	}
 	if atomic.LoadUint32(&p.workersNum) >= maxParallelWorkers {
 		// Number of maximum workers is reached, no need to
 		// to create a new one.
